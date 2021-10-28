@@ -199,7 +199,7 @@ db.findAllEmployees()
             // {
             //     type: "list",
             //     name: "role",
-            //     message: "what role do you want to add",
+            //     message: "what role do you want to add to the employee",
             //     choices: 
 
             // },
