@@ -1,7 +1,7 @@
 const { prompt } = require('inquirer');
 const db = require('./db/index');
 require('console.table');
-
+const connection = require('./db/connection')
 
 loadMainPrompts();
 
@@ -18,7 +18,7 @@ function loadMainPrompts() {
                 },
                 {
                     name: 'view all departments',
-                    value: ' VIEW_ALL_DEPARTMENTS'
+                    value: 'VIEW_ALL_DEPARTMENTS'
                 },
                 {
                     name: 'view all roles',
@@ -92,6 +92,7 @@ function viewEmployees() {
  }
 
 function viewAllDepartments() {
+    
     db.findAllDepartments()
         .then(([row]) => {
             let departments = row;
@@ -122,10 +123,10 @@ function addDepartment(){
 
         prompt([
             {
-                type: "list",
+                type: "input",
                 name: "departmentId",
                 maessage: "what department do you want to add?",
-                choices: departmentChoices
+               
             }
         ])
         .then(res => db.addDepartments(res.departmentId))
@@ -140,16 +141,30 @@ function addRole(){
     db.findAllRoles()
     .then(([row]) => {
         let roles = row;
-        const roleChoices = roles.map(({id, title}) => ({
-            name: `${title}`,
+        const roleChoices = roles.map(({id, title, salary}) => ({
+            title: `${title}`,
+            salary: `${salary}`,
             value: id
+            
         }));
         prompt([
             {
-                type: "list",
+                type: "input",
                 name: "roleId",
                 message: "what role do you want to add",
-                choices: roleChoices
+                
+            },
+            {
+                type:"input",
+                name: "salary",
+                message: "what is the salary",
+            },
+            {
+                type: "list",
+                name: "department",
+                message: "which department would you like?",
+                //choices: 
+
             }
         ])
         .then(res => db.addRole(res.roleId))
@@ -170,11 +185,30 @@ db.findAllEmployees()
         }));
         prompt([
             {
-                type: "list",
-                name: "employeeId",
-                message: "what employee do you want to add",
-                choices: employeeChoices
-            }
+                type: "input",
+                name: "firstname",
+                message: "first_name of new employee",
+                
+            },
+            {
+                type: "input",
+                name: "lastname",
+                masseage: "lastname of employee",
+
+            },
+            // {
+            //     type: "list",
+            //     name: "role",
+            //     message: "what role do you want to add",
+            //     choices: 
+
+            // },
+            // {
+            //     type: "list",
+            //     name: "manager",
+            //     message: "who is thier manager",
+            //     choices: 
+            // }
         ])
         .then(res => db.addRole(res.roleId))
         .then(() => console.log("updated role"))
@@ -197,7 +231,7 @@ function updateEmployeeRole() {
                 {
                     type: "list",
                     name: "employeeId",
-                    message: "which role do you want to update?",
+                    message: "whos role do you want to update?",
                     choices: employeeChoices
                 }
             ])
@@ -215,7 +249,7 @@ function updateEmployeeRole() {
                                 {
                                     type: "list",
                                     name: "roleId",
-                                    message: "whose role do you want to assign the employee?",
+                                    message: "what role do you want to assign the employee?",
                                     choices: roleChoices
                                 }
                             ])
@@ -225,4 +259,8 @@ function updateEmployeeRole() {
                         });
                 });
         })
+}
+
+function quit(){
+    connection.end();
 }
