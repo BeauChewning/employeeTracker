@@ -1,7 +1,23 @@
 const { prompt } = require('inquirer');
 const db = require('./db/index');
 require('console.table');
-const connection = require('./db/connection')
+const connection = require('./db/connection');
+const inquirer = require('inquirer');
+const mysql = require('mysql2')
+
+const bd = mysql.createConnection(
+    {
+      host: 'localhost',
+      // MySQL username,
+      user: 'root',
+      // TODO: Add MySQL password here
+      password: 'rootroot',
+      database: 'employee_db'
+    },
+    console.log(`Connected to employee database.`)
+  );
+
+
 
 loadMainPrompts();
 
@@ -89,10 +105,10 @@ function viewEmployees() {
             console.table(employees);
         })
         .then(() => loadMainPrompts());
- }
+}
 
 function viewAllDepartments() {
-    
+
     db.findAllDepartments()
         .then(([row]) => {
             let departments = row;
@@ -112,109 +128,133 @@ function viewAllRoles() {
         .then(() => loadMainPrompts());
 }
 
-function addDepartment(){
+function addDepartment() {
     db.findAllDepartments()
-    .then(([row]) => {
-        let departments = row;
-        const departmentChoices = departments.map(({id, name}) => ({
-            name: `${name}`,
-            value: id
-        }));
+        .then(([row]) => {
+            let departments = row;
+            const departmentChoices = departments.map(({ id, name }) => ({
+                name: `${name}`,
+                value: id
+            }));
 
-        prompt([
-            {
-                type: "input",
-                name: "departmentId",
-                maessage: "what department do you want to add?",
-               
-            }
-        ])
-        .then(res => db.addDepartments(res.departmentId))
-        .then(() => console.log("added department"))
-        .then(() => loadMainPrompts())
-    })
+            prompt([
+                {
+                    type: "input",
+                    name: "departmentId",
+                    maessage: "what department do you want to add?",
+
+                }
+            ])
+                .then(res => db.addDepartments(res.departmentId))
+                .then(() => console.log("added department"))
+                .then(() => loadMainPrompts())
+        })
 }
 
 
 
-function addRole(){
+function addRole() {
     db.findAllRoles()
-    .then(([row]) => {
-        let roles = row;
-        const roleChoices = roles.map(({id, title, salary}) => ({
-            title: `${title}`,
-            salary: `${salary}`,
-            value: id
-            
-        }));
-        prompt([
-            {
-                type: "input",
-                name: "roleId",
-                message: "what role do you want to add",
-                
-            },
-            {
-                type:"input",
-                name: "salary",
-                message: "what is the salary",
-            },
-            {
-                type: "list",
-                name: "department",
-                message: "which department would you like?",
-                //choices: 
+        .then(([row]) => {
+            let roles = row;
+            const roleChoices = roles.map(({ id, title, salary }) => ({
+                title: `${title}`,
+                salary: `${salary}`,
+                value: id
 
-            }
-        ])
-        .then(res => db.addRole(res.roleId))
-        .then(() => console.log("updated role"))
-        .then(() => loadMainPrompts())
-    })
+            }));
+            prompt([
+                {
+                    type: "input",
+                    name: "roleId",
+                    message: "what role do you want to add",
+
+                },
+                {
+                    type: "input",
+                    name: "salary",
+                    message: "what is the salary",
+                },
+                {
+                    type: "list",
+                    name: "department",
+                    message: "which department would you like?",
+                    choices: 
+
+                }
+            ])
+                .then(res => db.addRole(res.roleId))
+                .then(() => console.log("updated role"))
+                .then(() => loadMainPrompts())
+        })
 }
 
 
 
-function addEmployee(){
-db.findAllEmployees()
-    .then(([row]) => {
-        let employees = row;
-        const employeeChoices = employees.map(({id, first_name, last_name}) => ({
-            name: `${first_name} ${last_name}`,
-            value: id
-        }));
-        prompt([
+function addEmployee() {
+    inquirer
+        .prompt([
             {
-                type: "input",
-                name: "firstname",
-                message: "first_name of new employee",
-                
+                name: 'first_name',
+                type: 'input',
+                message: "what is the employee's first name?"
             },
             {
-                type: "input",
-                name: "lastname",
-                masseage: "lastname of employee",
-
+                name: 'last_name',
+                type: 'input',
+                message: "what is the employee's first name?"
             },
-            // {
-            //     type: "list",
-            //     name: "role",
-            //     message: "what role do you want to add to the employee",
-            //     choices: 
+        ]).then(answer => {
+            const name = [answer.first_name, answer.last_name]
+            bd.query('SELECT roles.id, roles.title FROM roles', (err, res) => {
+                if (err) throw err;
+                const roles = res.map(({ id, title }) => ({ name: title, value: id }));
+                inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'role',
+                            message: "What is the employee's role?",
+                            choices: roles
+                        }
+                    ]).then(roleChoice => {
+                        const role = roleChoice.role;
+                        name.push(role);
+                        bd.query('SELECT * FROM employee', (err, res) => {
+                            if (err) throw err;
+                            const managers = res.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
+                            inquirer
+                                .prompt([
+                                    {
+                                        type: 'list',
+                                        name: 'manager',
+                                        message: "Who is the employee's manager?",
+                                        choices: managers
+                                    }
+                                ]).then(managerChoice => {
+                                    const manager = managerChoice.manager;
+                                    name.push(manager);
+                                    bd.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ('${name[0]}', '${name[1]}', '${name[2]}', '${name[3]}')`, function (err, results) {
+                                        if(err){
+                                            throw err;
+                                        }
+                                    });
+                                            console.log("An Employee has been added!")
+                                            loadMainPrompts();
+                                        })
+                                })
+                        })
+                    })
+            })
+        }
 
-            // },
-            // {
-            //     type: "list",
-            //     name: "manager",
-            //     message: "who is thier manager",
-            //     choices: 
-            // }
-        ])
-        .then(res => db.addRole(res.roleId))
-        .then(() => console.log("updated role"))
-        .then(() => loadMainPrompts())
-    })
-}
+
+
+
+
+
+
+
 
 
 
@@ -261,6 +301,6 @@ function updateEmployeeRole() {
         })
 }
 
-function quit(){
+function quit() {
     connection.end();
 }
