@@ -1,5 +1,5 @@
 const { prompt } = require('inquirer');
-const db = require('./db');
+const db = require('./db/index');
 require('console.table');
 
 
@@ -48,8 +48,9 @@ function loadMainPrompts() {
         }
     ]).then(res => {
         let choice = res.choice;
+        console.log(choice)
 
-        switch (key) {
+        switch (choice) {
             case "VIEW_EMPLOYEES":
                 viewEmployees();
                 break;
@@ -88,9 +89,8 @@ function viewEmployees() {
             console.table(employees);
         })
         .then(() => loadMainPrompts());
+ }
 
-
-}
 function viewAllDepartments() {
     db.findAllDepartments()
         .then(([row]) => {
@@ -98,6 +98,7 @@ function viewAllDepartments() {
             console.log('\n');
             console.table(departments);
         })
+        .then(() => loadMainPrompts());
 }
 
 function viewAllRoles() {
@@ -107,6 +108,7 @@ function viewAllRoles() {
             console.log('\n');
             console.table(roles);
         })
+        .then(() => loadMainPrompts());
 }
 
 function addDepartment(){
@@ -126,7 +128,7 @@ function addDepartment(){
                 choices: departmentChoices
             }
         ])
-        .then(res => db.addDepartment(res.departmentId))
+        .then(res => db.addDepartments(res.departmentId))
         .then(() => console.log("added department"))
         .then(() => loadMainPrompts())
     })
@@ -158,7 +160,7 @@ function addRole(){
 
 
 
-function addEmployee()
+function addEmployee(){
 db.findAllEmployees()
     .then(([row]) => {
         let employees = row;
@@ -178,7 +180,7 @@ db.findAllEmployees()
         .then(() => console.log("updated role"))
         .then(() => loadMainPrompts())
     })
-
+}
 
 
 
@@ -213,7 +215,7 @@ function updateEmployeeRole() {
                                 {
                                     type: "list",
                                     name: "roleId",
-                                    message: "which role do you want to assign the employee?",
+                                    message: "whose role do you want to assign the employee?",
                                     choices: roleChoices
                                 }
                             ])
