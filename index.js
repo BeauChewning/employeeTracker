@@ -154,39 +154,46 @@ function addDepartment() {
 
 
 function addRole() {
-    db.findAllRoles()
-        .then(([row]) => {
-            let roles = row;
-            const roleChoices = roles.map(({ id, title, salary }) => ({
-                title: `${title}`,
-                salary: `${salary}`,
-                value: id
-
-            }));
-            prompt([
-                {
-                    type: "input",
-                    name: "roleId",
-                    message: "what role do you want to add",
-
-                },
-                {
-                    type: "input",
-                    name: "salary",
-                    message: "what is the salary",
-                },
-                {
-                    type: "list",
-                    name: "department",
-                    message: "which department would you like?",
-                    choices: 
-
+   inquirer
+   .prompt([
+       {
+           name: 'name',
+           type: 'input',
+           message: "what do you want to name the new role?"
+       },
+       {
+           name: 'salary',
+           type: 'input',
+           messages: "what is the salary for this role?"
+       }
+   ]).then((answer)=>{
+       const arr = [answer.name, answer.salary];
+       bd.query('SELECT * FROM department',(err,res)=>{
+           if(err) throw err;
+           const departments = res.map(({ id, name }) => ({
+               name: name, 
+               value: id
+           }));
+           inquirer
+           .prompt([
+               {
+                  name: "department",
+                  type: "list",
+                  message: "what department does the role belong to",
+                  choices: departments
+               }
+           ]).then((answer)=>{
+               arr.push(answer.department)
+               bd.query(`INSERT INTO roles (title, salary, department_id) VALUES ('${arr[0]}', '${arr[1]}', '${arr[2]}')`, function (err, results) {
+                if(err){
+                    throw err;
                 }
-            ])
-                .then(res => db.addRole(res.roleId))
-                .then(() => console.log("updated role"))
-                .then(() => loadMainPrompts())
-        })
+                loadMainPrompts()
+            });
+           
+           })
+       })
+   })
 }
 
 
